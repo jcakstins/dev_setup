@@ -2,8 +2,6 @@
 # Run: brew bundle --file=Brewfile
 # Generated for macOS 15 Sequoia, Apple Silicon
 
-tap "homebrew/bundle"
-
 # ── Core utilities ────────────────────────────────────────────────────────────
 brew "bat"            # better cat with syntax highlighting
 brew "fd"             # better find
