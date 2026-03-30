@@ -1,0 +1,31 @@
+# Cursor / VS Code extensions
+# Installed by: install/apps.sh
+# To install manually: cursor --install-extension <id>
+
+# ── AI & Claude ───────────────────────────────────────────────────────────────
+anthropic.claude-code
+
+# ── Python ────────────────────────────────────────────────────────────────────
+anysphere.cursorpyright
+ms-python.python
+ms-python.debugpy
+ms-python.pylint
+ms-python.isort
+ms-python.autopep8
+
+# ── Containers & remote ───────────────────────────────────────────────────────
+anysphere.remote-containers
+ms-azuretools.vscode-containers
+
+# ── Git ───────────────────────────────────────────────────────────────────────
+eamodio.gitlens
+github.vscode-pull-request-github
+
+# ── Data formats ──────────────────────────────────────────────────────────────
+redhat.vscode-yaml
+tamasfe.even-better-toml
+repreng.csv
+bierner.markdown-mermaid
+
+# ── Utilities ─────────────────────────────────────────────────────────────────
+codezombiech.gitignore

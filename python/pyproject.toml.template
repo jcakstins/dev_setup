@@ -1,0 +1,185 @@
+# =============================================================================
+#  pyproject.toml — Python project template
+#  Usage: copy to your project root and replace PROJECT_NAME / PACKAGE_NAME
+#
+#  Stack: uv + ruff + mypy + pytest + bandit + vulture + xenon + import-linter
+#  Matches the pattern used across ai.agent_service and related projects.
+# =============================================================================
+
+[project]
+name = "PROJECT_NAME"
+version = "0.1.0"
+authors = [{ name = "jcakstins", email = "janis.cakstins@arbor-education.com" }]
+requires-python = ">=3.13"
+dependencies = []
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/PACKAGE_NAME"]
+
+# ── Dev dependencies ──────────────────────────────────────────────────────────
+[dependency-groups]
+dev = [
+    # Type checking
+    "mypy>=1.17",
+    # Linting & formatting
+    "ruff>=0.11",
+    # Pylint for structural checks ruff doesn't cover
+    "pylint>=3.3",
+    # Testing
+    "pytest>=8.4",
+    "pytest-asyncio>=1.1",
+    "pytest-cov>=6.2",
+    "pytest-mock>=3.14",
+    # Security
+    "bandit[toml]>=1.9",
+    "pip-audit>=2.10",
+    # Dead code
+    "vulture>=2.15",
+    # Complexity
+    "xenon>=0.9",
+    # Architecture
+    "import-linter>=2.11",
+    # Pre-commit (used via hooks, not directly)
+    "pre-commit>=4.5",
+]
+
+# ── Mypy ──────────────────────────────────────────────────────────────────────
+[tool.mypy]
+python_version = "3.13"
+mypy_path      = ["src"]
+files          = ["src/PACKAGE_NAME"]
+explicit_package_bases = true
+disable_error_code = [
+    "arg-type",
+    "assignment",
+    "call-arg",
+    "import-not-found",
+    "import-untyped",
+    "index",
+    "return-value",
+    "type-var",
+]
+
+# ── Ruff ──────────────────────────────────────────────────────────────────────
+[tool.ruff]
+exclude = [
+    ".bzr", ".direnv", ".eggs", ".git", ".git-rewrite", ".hg",
+    ".mypy_cache", ".pytest_cache", ".ruff_cache", ".tox", ".venv",
+    "__pypackages__", "_build", "buck-out", "build", "dist",
+    "node_modules", "site-packages", "venv", "old/",
+]
+line-length = 120
+preview     = true
+
+[tool.ruff.lint]
+select = [
+    "F",    # Pyflakes
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "I",    # isort
+    "N",    # pep8-naming
+    "UP",   # pyupgrade
+    "ANN",  # flake8-annotations
+    "B",    # flake8-bugbear
+    "A",    # flake8-builtins
+    "C4",   # flake8-comprehensions
+    "C90",  # McCabe complexity
+    "SIM",  # flake8-simplify
+    "PIE",  # flake8-pie
+    "S",    # flake8-bandit (security)
+    "PL",   # Pylint
+    "PLR0904", # too-many-public-methods (preview)
+    "RUF",  # Ruff-specific
+]
+ignore = [
+    "ANN401",  # Any is sometimes required
+    "ANN204",  # special-method return types are convention-obvious
+    "PLR6301", # method could be static — too noisy
+]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 12
+
+[tool.ruff.lint.pylint]
+max-args       = 6
+max-branches   = 10
+max-returns    = 4
+max-statements = 40
+max-public-methods = 15
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+    "ANN", "S", "PLR", "PLW", "PLC", "PIE", "UP", "SIM", "RUF",
+    "B", "C4", "C90", "N", "A", "E501", "W291", "PLR2004",
+]
+"tests/*.py" = [
+    "S101",    # assert is idiomatic in pytest
+    "PLR2004", # magic values are intentional in tests
+]
+
+# ── Pytest ────────────────────────────────────────────────────────────────────
+[tool.pytest.ini_options]
+testpaths    = ["tests"]
+norecursedirs = ["old"]
+
+# ── Bandit ────────────────────────────────────────────────────────────────────
+[tool.bandit]
+exclude_dirs = [".venv"]
+skips        = ["B101"]  # assert is fine in test code
+
+# ── Vulture (dead code) ───────────────────────────────────────────────────────
+[tool.vulture]
+min_confidence = 80
+paths          = ["src/PACKAGE_NAME", "tests"]
+ignore_decorators = [
+    "@router.get", "@router.post", "@router.put", "@router.delete", "@router.patch",
+    "@app.get", "@app.post", "@app.put", "@app.delete", "@app.patch",
+    "@pytest.fixture", "@contextmanager", "@asynccontextmanager",
+    "@property", "@validator", "@field_validator", "@model_validator",
+]
+ignore_names = [
+    "model_config", "model_post_init", "dispatch",
+    "exc_type", "_exc_*", "*_vars",
+]
+
+# ── Pylint (structural checks only) ───────────────────────────────────────────
+# Ruff covers most pylint rules; pylint fills the gaps for structural analysis.
+[tool.pylint.'FORMAT']
+max-line-length = 120
+
+[tool.pylint.'DESIGN']
+max-module-lines = 500
+max-attributes   = 12
+max-parents      = 7
+
+[tool.pylint.'MESSAGES CONTROL']
+enable  = ["too-many-lines", "too-many-instance-attributes", "too-many-ancestors"]
+disable = ["all"]
+
+# ── Import linter (layer boundary contracts) ──────────────────────────────────
+# Adjust source_folders and contract modules for your project structure.
+[tool.importlinter]
+root_package   = "PACKAGE_NAME"
+source_folders = ["src"]
+
+[[tool.importlinter.contracts]]
+name             = "lib layer does not import from api or services"
+type             = "forbidden"
+source_modules   = ["PACKAGE_NAME.lib"]
+forbidden_modules = ["PACKAGE_NAME.api", "PACKAGE_NAME.services"]
+
+[[tool.importlinter.contracts]]
+name             = "services layer does not import from api"
+type             = "forbidden"
+source_modules   = ["PACKAGE_NAME.services"]
+forbidden_modules = ["PACKAGE_NAME.api"]
+
+[[tool.importlinter.contracts]]
+name             = "schemas layer does not import from api, services, lib, or db"
+type             = "forbidden"
+source_modules   = ["PACKAGE_NAME.schemas"]
+forbidden_modules = ["PACKAGE_NAME.api", "PACKAGE_NAME.services", "PACKAGE_NAME.lib", "PACKAGE_NAME.db"]

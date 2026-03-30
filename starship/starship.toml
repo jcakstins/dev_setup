@@ -1,0 +1,93 @@
+# =============================================================================
+#  starship.toml — Starship prompt configuration
+#  Docs: https://starship.rs/config/
+# =============================================================================
+
+# Prompt layout
+format = """
+$directory\
+$git_branch\
+$git_status\
+$python\
+$terraform\
+$kubernetes\
+$docker_context\
+$cmd_duration\
+$character"""
+
+add_newline = true
+
+# ── Directory ─────────────────────────────────────────────────────────────────
+[directory]
+truncation_length = 3
+truncate_to_repo  = true
+style             = "bold blue"
+read_only         = " 󰌾"
+read_only_style   = "red"
+
+# ── Git ───────────────────────────────────────────────────────────────────────
+[git_branch]
+symbol = " "
+style  = "bold purple"
+format = "[$symbol$branch(:$remote_branch)]($style) "
+
+[git_status]
+style      = "bold red"
+format     = '([$all_status$ahead_behind]($style) )'
+conflicted = "⚡"
+ahead      = "⇡${count}"
+behind     = "⇣${count}"
+diverged   = "⇕⇡${ahead_count}⇣${behind_count}"
+up_to_date = ""
+untracked  = "?${count}"
+stashed    = ""
+modified   = "!${count}"
+staged     = "+${count}"
+renamed    = "»${count}"
+deleted    = "✘${count}"
+
+# ── Python ────────────────────────────────────────────────────────────────────
+[python]
+symbol         = " "
+format         = '[$symbol$pyenv_prefix($version )(\($virtualenv\) )]($style)'
+style          = "bold yellow"
+detect_files   = ["requirements.txt", "pyproject.toml", ".python-version", "setup.py", "setup.cfg", "Pipfile", "tox.ini"]
+detect_folders = [".venv", "venv"]
+python_binary  = ["python3", "python"]
+
+# ── Terraform ─────────────────────────────────────────────────────────────────
+[terraform]
+symbol = "󱁢 "
+style  = "bold 105"
+format = "[$symbol$workspace]($style) "
+
+# ── Kubernetes ────────────────────────────────────────────────────────────────
+[kubernetes]
+disabled = false
+symbol   = "󱃾 "
+style    = "bold cyan"
+format   = "[$symbol$context(\\($namespace\\))]($style) "
+
+# ── Docker ────────────────────────────────────────────────────────────────────
+[docker_context]
+symbol   = " "
+style    = "blue bold"
+format   = "[$symbol$context]($style) "
+disabled = false
+
+# ── Command duration ──────────────────────────────────────────────────────────
+[cmd_duration]
+min_time          = 2000
+format            = "[ $duration]($style) "
+style             = "bold yellow"
+show_milliseconds = false
+
+# ── Character (prompt symbol) ─────────────────────────────────────────────────
+[character]
+success_symbol = "[❯](bold green)"
+error_symbol   = "[❯](bold red)"
+vimcmd_symbol  = "[❮](bold green)"
+
+# ── Modules to disable ────────────────────────────────────────────────────────
+[package]
+disabled = true   # hide package version (noisy in monorepos)

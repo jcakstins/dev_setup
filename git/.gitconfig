@@ -1,0 +1,100 @@
+# =============================================================================
+#  ~/.gitconfig — global git configuration
+# =============================================================================
+
+[user]
+    name  = jcakstins
+    email = janis.cakstins@arbor-education.com
+
+[init]
+    defaultBranch = main
+
+[core]
+    editor       = cursor --wait
+    excludesfile = ~/.gitignore_global
+    autocrlf     = input            # normalise line endings on commit
+    whitespace   = trailing-space,space-before-tab
+
+[pull]
+    rebase = true                   # always rebase on pull (cleaner history)
+
+[push]
+    default         = current       # push to same-name remote branch
+    autoSetupRemote = true          # auto --set-upstream on first push
+
+[fetch]
+    prune = true                    # remove stale remote-tracking branches
+
+[rebase]
+    autoStash  = true               # stash dirty work-tree before rebase
+    updateRefs = true               # update intermediate branches on rebase
+
+[merge]
+    conflictstyle = zdiff3          # show base in conflict markers (git >= 2.35)
+    tool          = cursor
+
+[diff]
+    algorithm  = histogram          # more readable diffs for code
+    colorMoved = zebra              # highlight moved lines differently
+    tool       = cursor
+
+[difftool "cursor"]
+    cmd = cursor --diff "$LOCAL" "$REMOTE" --wait
+
+[mergetool "cursor"]
+    cmd = cursor --merge "$LOCAL" "$REMOTE" "$BASE" "$MERGED" --wait
+
+[color]
+    ui = auto
+
+[alias]
+    # Status / info
+    st  = status -sb
+    lg  = log --oneline --graph --decorate --all
+    lp  = log --pretty=format:'%C(yellow)%h%Creset %C(cyan)%an%Creset %s %C(green)(%ar)%Creset' -20
+    who = shortlog -sne
+
+    # Branching
+    br  = branch -vv
+    co  = checkout
+    sw  = switch
+    new = switch -c                 # git new feature/my-branch
+
+    # Commits
+    ci  = commit
+    ca  = commit --amend --no-edit
+    cp  = cherry-pick
+
+    # Diffs
+    d   = diff
+    ds  = diff --staged
+    dc  = diff --cached
+
+    # Stash
+    sl  = stash list
+    sp  = stash pop
+
+    # Undo
+    unstage = restore --staged      # git unstage <file>
+    undo    = reset HEAD~1 --mixed  # undo last commit, keep changes staged
+
+    # Utilities
+    aliases = config --get-regexp alias
+    root    = rev-parse --show-toplevel
+    ignored = ls-files --others --ignored --exclude-standard
+
+[credential]
+    helper = osxkeychain            # macOS Keychain for HTTPS credentials
+
+[url "git@github.com:"]
+    insteadOf = https://github.com/ # use SSH for all github.com clones
+
+[filter "lfs"]
+    required = true
+    clean    = git-lfs clean -- %f
+    smudge   = git-lfs smudge -- %f
+    process  = git-lfs filter-process
+
+# Work-specific overrides (create this file for org email, signing keys, etc.)
+[includeIf "gitdir:~/github/"]
+    path = ~/.gitconfig.work

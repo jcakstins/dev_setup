@@ -1,0 +1,117 @@
+# =============================================================================
+#  .pre-commit-config.yaml — Standard pre-commit hooks template
+#  Usage: copy to your project root, update rev tags as needed
+#
+#  Matches the pattern used across ai.agent_service and related projects.
+#  Check for latest revs: https://pre-commit.com/hooks.html
+# =============================================================================
+
+exclude: '^cloudformation|.github|.checkov|.tfsec|dbt|old'
+
+# Synchronize dependencies on branch checkout, pull, and rebase
+default_install_hook_types:
+  - pre-commit
+  - post-checkout
+  - post-merge
+  - post-rewrite
+
+repos:
+  # ── uv: lock file and dependency sync ─────────────────────────────────────
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.7.12   # update to latest: uv run pre-commit autoupdate
+    hooks:
+      - id: uv-lock    # keep uv.lock in sync with pyproject.toml
+      - id: uv-sync    # auto-sync dependencies after checkout/pull
+        args: ["--locked", "--all-packages"]
+
+  # ── Ruff: lint and format ─────────────────────────────────────────────────
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.11.13
+    hooks:
+      - id: ruff-check
+        args: ["--fix", "--config", "pyproject.toml"]
+      - id: ruff-format
+        args: ["--config", "pyproject.toml"]
+
+  # ── Mypy: type checking ───────────────────────────────────────────────────
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy
+        language: system
+        entry: uv run mypy
+        args: ["--config-file", "pyproject.toml"]
+        pass_filenames: false
+        always_run: true
+
+  # ── Terraform: format ─────────────────────────────────────────────────────
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.96.1
+    hooks:
+      - id: terraform_fmt
+
+  # ── Bandit: security scanning ─────────────────────────────────────────────
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.9.4
+    hooks:
+      - id: bandit
+        args: ["-c", "pyproject.toml", "--severity-level", "medium", "-r", "."]
+        additional_dependencies: ["bandit[toml]"]
+        pass_filenames: false
+
+  # ── Vulture: dead code detection ──────────────────────────────────────────
+  - repo: https://github.com/jendrikseipp/vulture
+    rev: v2.15
+    hooks:
+      - id: vulture
+        args: ["src/PACKAGE_NAME", "tests"]
+        pass_filenames: false
+
+  # ── General file checks ───────────────────────────────────────────────────
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-merge-conflict
+      - id: end-of-file-fixer
+      - id: check-json
+      - id: check-added-large-files
+      - id: check-yaml
+        args: ['--unsafe']
+
+  # ── Xenon: cyclomatic complexity gate ─────────────────────────────────────
+  - repo: local
+    hooks:
+      - id: xenon
+        name: xenon (cyclomatic complexity gate)
+        language: system
+        entry: uv run xenon
+        args: ["--max-absolute", "C", "--max-modules", "B", "--max-average", "A", "src/PACKAGE_NAME/"]
+        pass_filenames: false
+        always_run: true
+
+      # ── Pylint: structural checks ──────────────────────────────────────────
+      - id: pylint
+        name: pylint (structural checks)
+        language: system
+        entry: uv run pylint
+        args: ["src/PACKAGE_NAME/", "--rcfile=pyproject.toml"]
+        pass_filenames: false
+        always_run: true
+
+      # ── Import linter: layer boundary contracts ────────────────────────────
+      - id: lint-imports
+        name: lint-imports (layer boundary contracts)
+        language: system
+        entry: uv run lint-imports
+        pass_filenames: false
+        always_run: true
+
+      # ── pip-audit: CVE scanning ────────────────────────────────────────────
+      - id: pip-audit
+        name: pip-audit (dependency CVE scan)
+        language: system
+        entry: uv run pip-audit
+        # Add --ignore-vuln flags for acknowledged unfixable CVEs:
+        # args: ["--ignore-vuln", "CVE-XXXX-XXXXX"]
+        pass_filenames: false
+        always_run: true

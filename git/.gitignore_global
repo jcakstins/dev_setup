@@ -1,0 +1,109 @@
+# =============================================================================
+#  ~/.gitignore_global — global gitignore for all repositories
+# =============================================================================
+
+# ── macOS ─────────────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+.AppleDouble
+.LSOverride
+Icon?
+Thumbs.db
+
+# ── Editor / IDE ──────────────────────────────────────────────────────────────
+.vscode/
+.cursor/
+*.suo
+*.user
+*.swp
+*.swo
+*~
+\#*\#
+.\#*
+.idea/
+*.iml
+
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.egg
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+ENV/
+env/
+.env
+.env.*
+!.env.example
+!.env.sample
+pip-log.txt
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pytype/
+
+# ── Node ──────────────────────────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.pnp.*
+
+# ── Terraform / OpenTofu ──────────────────────────────────────────────────────
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+*.tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# ── Secrets & credentials ─────────────────────────────────────────────────────
+.secrets
+*.pem
+*.key
+*.p12
+*.pfx
+*_rsa
+*_dsa
+*_ecdsa
+*_ed25519
+id_rsa
+id_dsa
+*.credentials
+.envrc
+
+# ── Logs & temp files ─────────────────────────────────────────────────────────
+*.log
+*.tmp
+*.temp
+*.bak
+*.orig
+*.rej
+
+# ── Build artefacts ───────────────────────────────────────────────────────────
+*.o
+*.a
+*.so
+*.dylib
+
+# ── uv ────────────────────────────────────────────────────────────────────────
+# uv.lock is NOT here — it should be committed in each project
+.uv/
