@@ -68,7 +68,7 @@ fi
 log "Installing packages from Brewfile"
 info "This may take a few minutes on a fresh machine..."
 
-run brew bundle --file="${DOTFILES_DIR}/Brewfile" --no-lock
+run brew bundle --file="${DOTFILES_DIR}/Brewfile"
 
 # ── 3. Symlink dotfiles ───────────────────────────────────────────────────────
 log "Symlinking dotfiles"
