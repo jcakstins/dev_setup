@@ -232,6 +232,15 @@ uvinit() {
   echo "Project '$name' created. Edit pyproject.toml, then: uv sync"
 }
 
+# ── Bun ───────────────────────────────────────────────────────────────────────
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
+[ -s "$BUN_INSTALL/_bun" ] && source "$BUN_INSTALL/_bun"   # bun completions
+
+# ── Terraform completions ─────────────────────────────────────────────────────
+autoload -U +X bashcompinit && bashcompinit
+[[ -x "$(command -v terraform)" ]] && complete -o nospace -C "$(command -v terraform)" terraform
+
 # ── Secrets ───────────────────────────────────────────────────────────────────
 # API keys and tokens live outside the repo. Never commit ~/.secrets.
 # Template: ~/github/dev_setup/.secrets.example
