@@ -249,3 +249,9 @@ autoload -U +X bashcompinit && bashcompinit
 # ── Starship prompt ───────────────────────────────────────────────────────────
 # Must be last — needs final PATH state to find binaries for prompt modules
 eval "$(starship init zsh)"
+
+# Golang environment variables
+export GOROOT=$(brew --prefix go)/libexec
+export GOPATH=$HOME/go
+export PATH=$GOPATH/bin:$GOROOT/bin:$HOME/.local/bin:$PATH
+export DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib
