@@ -8,11 +8,17 @@ brew "fd"             # better find
 brew "fzf"            # fuzzy finder
 brew "gh"             # GitHub CLI
 brew "git"            # version control
+brew "jq"             # JSON processor
 brew "ripgrep"        # fast grep (rg)
 brew "zoxide"         # smarter cd
 
 # ── Shell ─────────────────────────────────────────────────────────────────────
 brew "starship"       # cross-shell prompt
+
+# ── Terminal multiplexing ──────────────────────────────────────────────────────
+brew "tmux"           # terminal multiplexer — session persistence on top of kitty
+brew "tmuxp"          # tmux session/window layouts from a YAML/JSON file
+brew "sesh"           # fast tmux session switcher (fzf + zoxide aware)
 
 # ── Python ────────────────────────────────────────────────────────────────────
 brew "python@3.13"    # primary Python (unversioned symlinks via .zprofile)

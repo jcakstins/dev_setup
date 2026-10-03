@@ -109,6 +109,13 @@ alias kgn='kubectl get nodes'
 alias kctx='kubectl config current-context'
 alias kns='kubectl config set-context --current --namespace'
 
+# tmux / sesh — opt-in, nothing auto-starts a session
+# tm:  jump into the sesh fzf picker (same as tmux prefix+T, usable before tmux is running)
+# tma: attach the last session, or create 'main' if none exist yet
+alias tm='sesh connect "$(sesh list --icons | fzf --height=70% --reverse --ansi --no-sort --prompt="⚡  ")"'
+alias tma='tmux attach || sesh connect main'
+alias tls='tmux ls'
+
 # Misc
 alias reload='source ~/.zshrc'
 alias dotfiles='cd ${HOME}/github/dev_setup'

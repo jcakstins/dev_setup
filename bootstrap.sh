@@ -90,6 +90,8 @@ symlink "${DOTFILES_DIR}/git/.gitconfig"         "${HOME}/.gitconfig"
 symlink "${DOTFILES_DIR}/git/.gitignore_global"  "${HOME}/.gitignore_global"
 symlink "${DOTFILES_DIR}/kitty/kitty.conf"       "${HOME}/.config/kitty/kitty.conf"
 symlink "${DOTFILES_DIR}/starship/starship.toml" "${HOME}/.config/starship.toml"
+symlink "${DOTFILES_DIR}/tmux/.tmux.conf"        "${HOME}/.tmux.conf"
+symlink "${DOTFILES_DIR}/tmux/.tmux.conf.local"  "${HOME}/.tmux.conf.local"
 
 # Register global gitignore with git
 run git config --global core.excludesfile "${HOME}/.gitignore_global"
@@ -142,6 +144,36 @@ if [[ ! -f "${HOME}/.secrets" ]]; then
 else
   info "~/.secrets already exists — not overwriting."
 fi
+
+# ── 6b. tmux plugins (TPM) ────────────────────────────────────────────────────
+log "tmux plugin manager + plugins"
+
+TMUX_PLUGINS_DIR="${HOME}/.tmux/plugins"
+run mkdir -p "${TMUX_PLUGINS_DIR}"
+
+if [[ ! -d "${TMUX_PLUGINS_DIR}/tpm/.git" ]]; then
+  info "Cloning tpm (tmux plugin manager)..."
+  run git clone --depth 1 https://github.com/tmux-plugins/tpm "${TMUX_PLUGINS_DIR}/tpm"
+else
+  info "tpm present — pulling latest..."
+  run git -C "${TMUX_PLUGINS_DIR}/tpm" pull --ff-only --quiet
+fi
+
+# Clone plugins directly rather than via tpm's install_plugins.sh: that script
+# discovers @plugin lines by querying a *running* tmux server, which this
+# bootstrap doesn't start. Cloning the two pinned plugins here is equivalent
+# and works without one. tmux (or `<prefix> I`) will pick up any already-cloned
+# plugin on next launch.
+for plugin in tmux-resurrect tmux-continuum; do
+  if [[ ! -d "${TMUX_PLUGINS_DIR}/${plugin}/.git" ]]; then
+    info "Cloning ${plugin}..."
+    run git clone --depth 1 --single-branch --recursive \
+      "https://github.com/tmux-plugins/${plugin}" "${TMUX_PLUGINS_DIR}/${plugin}"
+  else
+    info "${plugin} present — pulling latest..."
+    run git -C "${TMUX_PLUGINS_DIR}/${plugin}" pull --ff-only --quiet
+  fi
+done
 
 # ── 7. macOS system defaults ──────────────────────────────────────────────────
 log "macOS defaults"

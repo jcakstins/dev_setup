@@ -8,6 +8,7 @@ Personal developer environment cheat sheet. Keep this open on a second monitor w
 - [Starship](https://starship.rs/config/) · [zsh-vi-mode](https://github.com/jeffreytse/zsh-vi-mode)
 - [fzf](https://github.com/junegunn/fzf) · [zoxide](https://github.com/ajeetdsouza/zoxide) · [uv](https://docs.astral.sh/uv/)
 - [tfenv](https://github.com/tfutils/tfenv) · [pre-commit](https://pre-commit.com/)
+- [tmux](https://github.com/tmux/tmux/wiki) · [Oh my tmux!](https://github.com/gpakosz/.tmux) · [sesh](https://github.com/joshmedeski/sesh) · [tmuxp](https://tmuxp.git-pull.com/)
 
 ---
 
@@ -46,6 +47,98 @@ Personal developer environment cheat sheet. Keep this open on a second monitor w
 | `Cmd+Home` / `End` | Scroll to top / bottom |
 
 > **Official docs:** https://sw.kovidgoyal.net/kitty/overview/#keyboard-shortcuts
+
+---
+
+## tmux — sessions on top of kitty
+
+tmux here is scoped to one job: **sessions that survive**. Kitty still owns pane splits
+(`Cmd+D`), pane navigation (`Ctrl+HJKL`) and tabs (`Cmd+T`, `Cmd+1`-`5`) — don't look for
+tmux equivalents of those, they'd just be a second system to remember. What tmux adds is
+a session you can detach from and reattach to later (even after closing the kitty window,
+restarting your laptop, or a kitty crash), with tmux-resurrect/continuum auto-saving so
+your panes and working directories come back.
+
+The config is [Oh my tmux!](https://github.com/gpakosz/.tmux); customizations live in
+`.tmux.conf.local` (never edit `.tmux.conf` directly — see its comment at the top).
+
+### Starting out
+| Command | Action |
+|---------|--------|
+| `tmux` | Start a new (unnamed) session |
+| `tmux new -s work` | Start a new session named "work" |
+| `tmux ls` or `tls` | List sessions |
+| `tmux attach` or `tma` | Attach to the last session (creates "main" if none exist) |
+| `tm` | Open the sesh fzf picker — works even before any tmux session exists |
+| `exit` or `Ctrl+D` | Kill the current pane (kills the session if it's the last pane) |
+
+### The prefix key
+Every tmux command (except the few bound outside the prefix table) starts with the
+**prefix**, here set to **`Ctrl+a`**. Press it, release, then press the command key —
+it's not held together. `send-keys` note: because `Ctrl+a` is also zsh/readline's
+"jump to start of line", that specific binding is shadowed while tmux is focused; use
+NORMAL-mode `0` (zsh-vi-mode) instead, or press prefix then `a` to send a literal `Ctrl+a`
+to the shell.
+
+### Session management (the part worth learning first)
+| Key | Action |
+|-----|--------|
+| `prefix d` | Detach from the session (keeps running in the background) |
+| `prefix T` | Open the [sesh](https://github.com/joshmedeski/sesh) picker — fuzzy-switch between tmux sessions, zoxide dirs, and `sesh.toml` project configs |
+| `prefix L` | Jump back to the previously-attached session |
+| `prefix $` | Rename the current session |
+| `prefix s` | List and switch sessions (built-in tmux picker, no fzf) |
+| `prefix (` / `)` | Previous / next session |
+
+### Windows (tmux's own "tabs" — independent of kitty's)
+| Key | Action |
+|-----|--------|
+| `prefix c` | New window |
+| `prefix ,` | Rename current window |
+| `prefix Ctrl+h` / `Ctrl+l` | Previous / next window (repeatable — hold `Ctrl`, tap `h`/`l`) |
+| `prefix 0`-`9` | Jump to window by number |
+| `prefix w` | List and switch windows (tree view) |
+| `prefix &` | Kill current window (asks to confirm) |
+
+### Copy mode (vi keys, since `mode-keys vi` is set)
+| Key | Action |
+|-----|--------|
+| `prefix [` | Enter copy mode (scroll + select) |
+| `h j k l` | Move (same as vim) |
+| `v` | Start selection |
+| `y` | Yank selection and exit copy mode |
+| `q` or `Esc` | Exit copy mode without copying |
+| `prefix ]` | Paste what you last yanked |
+
+### Session persistence (tmux-resurrect + tmux-continuum)
+Continuum auto-saves every 15 minutes and auto-restores on tmux launch — this is the
+part that matters for "I closed my laptop and want everything back."
+| Key | Action |
+|-----|--------|
+| `prefix Ctrl+s` | Manually save now (resurrect) |
+| `prefix Ctrl+r` | Manually restore the last save |
+
+### Plugins (TPM)
+| Key | Action |
+|-----|--------|
+| `prefix I` | Install any new `@plugin` lines added to `.tmux.conf.local` |
+| `prefix u` | Update installed plugins |
+
+### sesh and tmuxp — the two session tools, and when to use which
+- **sesh** — fast, zoxide-aware *switching*. No config needed; `prefix T` or `tm` gets
+  you from "a directory I visited recently" to "an attached tmux session" in one fuzzy
+  search. Optionally define a `sesh.toml` in a project for startup commands/window
+  layout: see https://github.com/joshmedeski/sesh#readme.
+- **tmuxp** — declarative *layouts* from a YAML file (which windows, which panes, which
+  command runs in each, checked into a repo so a teammate gets the same layout). Use it
+  when a project's dev setup is "always these 3 panes running these 3 things":
+  ```bash
+  tmuxp freeze work        # capture your current session's layout to YAML
+  tmuxp load work.yaml     # recreate it later, anywhere
+  ```
+  Docs: https://tmuxp.git-pull.com/
+
+> **Official docs:** https://github.com/tmux/tmux/wiki · https://github.com/gpakosz/.tmux#readme
 
 ---
 
