@@ -62,18 +62,33 @@ if ! command -v tenv &>/dev/null; then
 else
   info "tenv version: $(tenv --version 2>&1)"
 
-  # `install` is a no-op if the version is already present
-  info "Installing latest Terraform..."
-  tenv tf install latest
-  tenv tf use latest
+  # OpenTofu releases are looked up via the GitHub API (60 req/h unauthenticated);
+  # use the gh login when available to avoid rate limits
+  if [[ -z "${TENV_GITHUB_TOKEN:-}" ]] && gh auth token &>/dev/null; then
+    TENV_GITHUB_TOKEN="$(gh auth token)"
+    export TENV_GITHUB_TOKEN
+  fi
 
-  # Also keep 1.5.7 available (last version before the BSL licence change)
-  info "Installing Terraform 1.5.7 (pre-BSL)..."
-  tenv tf install 1.5.7
+  # ensure_latest <tf|tofu> <label> — install + activate latest only when no
+  # version is installed yet, so re-runs don't hit the network. Upgrade later
+  # with: tenv <tf|tofu> install latest && tenv <tf|tofu> use latest
+  ensure_latest() {
+    local t="$1" label="$2"
+    if [[ -n "$(tenv "$t" list 2>/dev/null)" ]]; then
+      info "${label} already installed — skipping (upgrade: tenv ${t} install latest)"
+      return 0
+    fi
+    info "Installing latest ${label}..."
+    tenv "$t" install latest && tenv "$t" use latest
+  }
 
-  info "Installing latest OpenTofu..."
-  tenv tofu install latest
-  tenv tofu use latest
+  ensure_latest tf   Terraform || warn "Terraform install failed — re-run later"
+  ensure_latest tofu OpenTofu  || warn "OpenTofu install failed — re-run later"
+
+  # Also keep 1.5.7 available (last version before the BSL licence change);
+  # a pinned version is a local no-op once installed
+  info "Ensuring Terraform 1.5.7 (pre-BSL)..."
+  tenv tf install 1.5.7 || warn "Terraform 1.5.7 install failed — re-run later"
 
   info "Terraform versions: $(tenv tf list 2>/dev/null | tr -s '[:space:]' ' ')"
   info "OpenTofu versions:  $(tenv tofu list 2>/dev/null | tr -s '[:space:]' ' ')"
