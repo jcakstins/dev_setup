@@ -155,6 +155,25 @@ brew_packages() {
     fi
   done
 
+  # Skip casks whose app was installed outside Homebrew (manual download, App
+  # Store). Homebrew would try to "adopt" it, which macOS App Management
+  # protection blocks even with sudo — and such apps self-update anyway.
+  local skip=() cask app
+  local installed_casks; installed_casks="$(brew list --cask 2>/dev/null || true)"
+  while IFS= read -r cask; do
+    [[ -z "$cask" ]] && continue
+    grep -qx "${cask##*/}" <<<"$installed_casks" && continue
+    while IFS= read -r app; do
+      if [[ -n "$app" && -e "/Applications/${app}" ]]; then
+        info "${cask}: /Applications/${app} already installed outside Homebrew — skipping"
+        skip+=("$cask")
+        break
+      fi
+    done < <(brew info --cask --json=v2 "$cask" 2>/dev/null \
+               | jq -r '.casks[].artifacts[] | .app? // empty | .[] | strings' || true)
+  done < <(brew bundle list --cask --file="${DOTFILES_DIR}/Brewfile" 2>/dev/null || true)
+  export HOMEBREW_BUNDLE_CASK_SKIP="${skip[*]+"${skip[*]}"}"
+
   info "Installing from Brewfile (already-installed packages are skipped)..."
   # Retry once: most bundle failures on a fresh machine are transient downloads
   retry 2 run brew bundle --file="${DOTFILES_DIR}/Brewfile"
