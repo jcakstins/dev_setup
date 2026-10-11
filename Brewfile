@@ -2,8 +2,6 @@
 # Run: brew bundle --file=Brewfile
 # macOS 15 Sequoia, Apple Silicon
 
-tap "terraform-linters/tap"   # tflint (no longer in homebrew-core)
-
 # ── Core utilities ────────────────────────────────────────────────────────────
 brew "bat"            # better cat with syntax highlighting
 brew "fd"             # better find
@@ -22,14 +20,14 @@ brew "tmux"           # terminal multiplexer
 brew "tmuxp"          # tmux session layouts from YAML/JSON
 brew "sesh"           # fast tmux session switcher (fzf + zoxide aware)
 
-# ── Python (interpreters managed by uv) ───────────────────────────────────────
-brew "uv"             # Python package/project/version manager
+# ── Dotfiles & tool versions ──────────────────────────────────────────────────
+brew "chezmoi"        # dotfiles manager (home/ in this repo)
+brew "mise"           # tool versions: terraform, opentofu, tflint, ruff… (~/.config/mise/config.toml)
+brew "uv"             # Python package/project manager (creates venvs, downloads Pythons per project)
 
 # ── Infrastructure / DevOps ───────────────────────────────────────────────────
-# Terraform/OpenTofu versions managed by tenv (e.g. `tenv tofu install`)
-brew "tenv"           # version manager for OpenTofu / Terraform
+# terraform, opentofu and tflint versions are managed by mise, not Homebrew
 brew "terraform-docs" # generate docs from Terraform modules
-cask "terraform-linters/tap/tflint"  # Terraform linter (official tap)
 brew "tilt"           # local dev orchestration for Kubernetes
 brew "kubectl"        # Kubernetes CLI
 brew "colima"         # container runtime (Docker daemon)

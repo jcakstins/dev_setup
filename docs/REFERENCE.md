@@ -7,7 +7,7 @@ Personal developer environment cheat sheet. Keep this open on a second monitor w
 - [Neovim](https://neovim.io/doc/) · [Vim cheat sheet](https://vim.rtorr.com/)
 - [Starship](https://starship.rs/config/) · [zsh-vi-mode](https://github.com/jeffreytse/zsh-vi-mode)
 - [fzf](https://github.com/junegunn/fzf) · [zoxide](https://github.com/ajeetdsouza/zoxide) · [uv](https://docs.astral.sh/uv/)
-- [tenv](https://github.com/tofuutils/tenv) · [pre-commit](https://pre-commit.com/)
+- [mise](https://mise.jdx.dev) · [chezmoi](https://chezmoi.io) · [pre-commit](https://pre-commit.com/)
 - [tmux](https://github.com/tmux/tmux/wiki) · [Oh my tmux!](https://github.com/gpakosz/.tmux) · [sesh](https://github.com/joshmedeski/sesh) · [tmuxp](https://tmuxp.git-pull.com/)
 
 ---
@@ -344,21 +344,32 @@ pre-commit install
 
 ---
 
-## Terraform / OpenTofu — tenv
+## Tool versions — mise
 
-`tenv` manages Terraform and OpenTofu versions. Use a `.terraform-version` / `.opentofu-version` file per project.
+`mise` manages Terraform, OpenTofu, tflint, Python and more. Global versions live in `~/.config/mise/config.toml` (source: `home/dot_config/mise/config.toml`). Per project, use a `mise.toml` or a `.terraform-version` file.
 
 | Command | Action |
 |---------|--------|
-| `tenv tf list` | Show installed Terraform versions |
-| `tenv tf list-remote` | Show available versions |
-| `tenv tf install 1.9.0` | Install specific version |
-| `tenv tf install latest` | Install latest stable |
-| `tenv tf use 1.9.0` | Switch active version |
-| `tenv tofu install latest` / `tenv tofu use latest` | Same for OpenTofu (`tofu`) |
-| `echo "1.9.0" > .terraform-version` | Pin version for this project |
+| `mise ls` | Show installed tools and where each version is set |
+| `mise ls-remote terraform` | Show available versions |
+| `mise use terraform@1.9` | Pin a version in this project's `mise.toml` |
+| `mise use -g terraform@1.16` | Change the global version |
+| `mise install` | Install everything the config asks for |
+| `mise upgrade` | Upgrade tools within their version constraints |
+| `mise use node@22` | Add Node to *this project only* |
 
-> **Tip:** Drop a `.terraform-version` (or `.opentofu-version`) file in each project root. tenv picks it up automatically.
+> **Tip:** Drop a `.terraform-version` file in each project root. mise picks it up automatically.
+
+## Dotfiles — chezmoi
+
+| Command | Action |
+|---------|--------|
+| `chezmoi edit ~/.zshrc` | Edit the repo copy of a dotfile |
+| `chezmoi diff` | Preview changes `apply` would make |
+| `chezmoi apply` | Write dotfiles, run changed scripts |
+| `chezmoi status` | Show files that differ from the repo |
+| `chezmoi add ~/.config/foo` | Start managing a file |
+| `chezmoi apply --refresh-externals` | Re-pull zsh/tmux plugins now |
 
 ---
 
@@ -481,7 +492,7 @@ Your API keys live in `~/.secrets` (gitignored, sourced by `.zshrc`).
 cursor ~/.secrets
 
 # Template is at:
-cat ~/github/dev_setup/.secrets.example
+cat ~/github/dev_setup/home/create_private_dot_secrets
 ```
 
 Never commit `.secrets`. The `.gitignore_global` blocks it globally across all repos.

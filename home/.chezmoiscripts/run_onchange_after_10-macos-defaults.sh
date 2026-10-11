@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-#  install/macos.sh — Sensible macOS system defaults
+#  macos defaults — Sensible macOS system defaults
 #  Called by bootstrap.sh; safe to re-run (idempotent via defaults write)
 #  Requires: macOS 15 Sequoia
 #

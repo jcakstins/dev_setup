@@ -1,0 +1,14 @@
+# ripgrep configuration file (~/.ripgreprc)
+# Referenced by: RIPGREP_CONFIG_PATH in .zshrc
+
+--smart-case
+--follow
+--glob=!.git/*
+--glob=!node_modules/*
+--glob=!.venv/*
+--glob=!__pycache__/*
+--glob=!*.pyc
+--glob=!.terraform/*
+--glob=!.DS_Store
+--max-columns=200
+--max-columns-preview

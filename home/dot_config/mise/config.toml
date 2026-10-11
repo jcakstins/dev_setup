@@ -1,0 +1,22 @@
+# mise — global tool versions (~/.config/mise/config.toml)
+# Install everything:  mise install        Upgrade:  mise upgrade
+# Per-project overrides go in a `mise.toml` (or .terraform-version)
+# in the project root and switch automatically on `cd`.
+# Docs: https://mise.jdx.dev
+
+[settings]
+idiomatic_version_file_enable_tools = ["terraform"]   # honour .terraform-version
+
+# One global Python (latest stable) for quick scripts and tools. Real projects
+# get their own interpreter + venv from `uv venv` / `uv run` (uv downloads what
+# .python-version asks for). No global Node or other languages — add them per
+# project with a `mise.toml` (`mise use node@22`) only where needed.
+
+[tools]
+python    = "latest"                  # newest stable CPython
+terraform = ["1.16", "1.5.7"]         # 1.5.7 = last pre-BSL release
+opentofu  = "1"                       # provides `tofu`
+tflint    = "latest"
+ruff      = "latest"                  # fast Python linter + formatter
+"pipx:ipython" = "latest"             # enhanced Python REPL
+"pipx:httpie"  = "latest"             # user-friendly curl (`http`)

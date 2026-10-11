@@ -1,0 +1,39 @@
+# Git-hosted plugins, cloned by chezmoi and refreshed weekly.
+# Force a refresh with: chezmoi apply --refresh-externals
+
+[".zsh/plugins/zsh-autosuggestions"]
+    type = "git-repo"
+    url = "https://github.com/zsh-users/zsh-autosuggestions.git"
+    refreshPeriod = "168h"
+    [".zsh/plugins/zsh-autosuggestions".pull]
+        args = ["--ff-only"]
+
+[".zsh/plugins/zsh-vi-mode"]
+    type = "git-repo"
+    url = "https://github.com/jeffreytse/zsh-vi-mode.git"
+    refreshPeriod = "168h"
+    [".zsh/plugins/zsh-vi-mode".pull]
+        args = ["--ff-only"]
+
+# tmux plugins are cloned directly (not via tpm's installer, which needs a
+# running tmux server). tmux / `<prefix> I` picks them up on next launch.
+[".tmux/plugins/tpm"]
+    type = "git-repo"
+    url = "https://github.com/tmux-plugins/tpm.git"
+    refreshPeriod = "168h"
+    [".tmux/plugins/tpm".pull]
+        args = ["--ff-only"]
+
+[".tmux/plugins/tmux-resurrect"]
+    type = "git-repo"
+    url = "https://github.com/tmux-plugins/tmux-resurrect.git"
+    refreshPeriod = "168h"
+    [".tmux/plugins/tmux-resurrect".pull]
+        args = ["--ff-only"]
+
+[".tmux/plugins/tmux-continuum"]
+    type = "git-repo"
+    url = "https://github.com/tmux-plugins/tmux-continuum.git"
+    refreshPeriod = "168h"
+    [".tmux/plugins/tmux-continuum".pull]
+        args = ["--ff-only"]

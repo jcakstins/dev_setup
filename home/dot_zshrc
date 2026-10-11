@@ -86,7 +86,7 @@ alias venv='uv venv'
 alias pipi='uv pip install'
 alias pipu='uv pip install --upgrade'
 
-# Terraform (versions via tenv)
+# Terraform (versions via mise)
 alias tf='terraform'
 alias tfi='terraform init'
 alias tfp='terraform plan'
@@ -95,7 +95,7 @@ alias tfd='terraform destroy'
 alias tff='terraform fmt -recursive'
 alias tfv='terraform validate'
 
-# OpenTofu (mirrors terraform aliases; binary is `tofu`, via tenv)
+# OpenTofu (mirrors terraform aliases; binary is `tofu`, via mise)
 alias otfi='tofu init'
 alias otfp='tofu plan'
 alias otfa='tofu apply'
@@ -152,6 +152,9 @@ export TF_CLI_ARGS_plan="-compact-warnings"
 export CHECKPOINT_DISABLE=1     # disable Terraform version check phone-home
 
 # ── Tool integrations ─────────────────────────────────────────────────────────
+
+# mise — tool versions per directory (terraform, tofu, ...)
+command -v mise &>/dev/null && eval "$(mise activate zsh)"
 
 # zoxide — smarter cd (replaces 'cd' with z + keeps cd working)
 eval "$(zoxide init zsh)"
@@ -249,7 +252,7 @@ autoload -U +X bashcompinit && bashcompinit
 
 # ── Secrets ───────────────────────────────────────────────────────────────────
 # API keys and tokens live outside the repo. Never commit ~/.secrets.
-# Template: ~/github/dev_setup/.secrets.example
+# Template: home/create_private_dot_secrets in the dev_setup repo
 [[ -f "${HOME}/.secrets" ]] && source "${HOME}/.secrets"
 
 # ── Starship prompt ───────────────────────────────────────────────────────────

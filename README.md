@@ -9,7 +9,17 @@ git clone https://github.com/jcakstins/dev_setup.git ~/github/dev_setup
 bash ~/github/dev_setup/bootstrap.sh
 ```
 
-Then start Docker when needed: `colima start`
+Re-running is safe: anything already installed is skipped, and existing config files that differ are backed up to `~/.dotfiles-backup/<timestamp>/` before being replaced. Then start Docker when needed: `colima start`.
+
+## How it works
+
+| Layer | Tool | Config | Manages |
+|-------|------|--------|---------|
+| Apps & CLI tools | [Homebrew](https://brew.sh) | `Brewfile` | everything installed system-wide |
+| Dotfiles & setup | [chezmoi](https://chezmoi.io) | `home/` | dotfiles, zsh/tmux plugins, `~/.secrets`, macOS defaults, editor extensions, completions |
+| Tool versions | [mise](https://mise.jdx.dev) | `home/dot_config/mise/config.toml` | python, terraform, opentofu, tflint, ruff, ipython, httpie |
+
+`bootstrap.sh` installs Homebrew + the Brewfile, then runs `chezmoi apply`, which writes the dotfiles and runs the setup scripts (`mise install`, macOS defaults, …). Each script re-runs only when its own content changes.
 
 ## What gets installed
 
@@ -26,13 +36,14 @@ Then start Docker when needed: `colima start`
 - [vim-kitty-navigator](https://github.com/knubie/vim-kitty-navigator) — seamless `Ctrl+hjkl` navigation between kitty panes and nvim splits
 
 **Python**
-- [uv](https://docs.astral.sh/uv/) — package/project manager; also installs Python 3.13 (default `python`) + 3.14
+- [uv](https://docs.astral.sh/uv/) — package/project manager; creates venvs and downloads project Pythons on demand
+- One global Python (latest stable) via mise; no other global languages (add per project with `mise use`)
 - [pre-commit](https://pre-commit.com/) — git hook framework
 - Templates for `pyproject.toml` and `.pre-commit-config.yaml` in `python/`
 
 **Infrastructure**
-- [tenv](https://github.com/tofuutils/tenv) — Terraform/OpenTofu version manager (installs latest terraform + 1.5.7, latest tofu)
-- terraform-docs, tflint, [tilt](https://tilt.dev/), [trufflehog](https://github.com/trufflesecurity/trufflehog)
+- Terraform (1.16 + 1.5.7), OpenTofu and tflint via [mise](https://mise.jdx.dev)
+- terraform-docs, [tilt](https://tilt.dev/), [trufflehog](https://github.com/trufflesecurity/trufflehog)
 - kubectl, [Colima](https://github.com/abiosoft/colima) + Docker CLI + Docker Compose
 
 **Apps**
@@ -44,57 +55,53 @@ Then start Docker when needed: `colima start`
 dev_setup/
 ├── bootstrap.sh                    # run this on a new Mac
 ├── Brewfile                        # all Homebrew packages and casks
-├── .secrets.example                # template for API keys → copy to ~/.secrets
-├── zsh/
-│   ├── .zshrc                      # interactive shell config
-│   └── .zprofile                   # login shell (Homebrew, ~/.local/bin PATH)
-├── git/
-│   ├── .gitconfig                  # aliases, rebase pull, gh auth, cursor diff 
-│   └── .gitignore_global           # global ignore (Python, Node, Terraform, secrets)
-├── kitty/
-│   └── kitty.conf                  # Idle Toes theme, Nerd Font, vim-kitty-navigator
-├── starship/
-│   └── starship.toml               # prompt modules
-├── tmux/
-│   ├── .tmux.conf                  # Oh my tmux! base (don't edit — see .tmux.conf.local)
-│   └── .tmux.conf.local            # prefix Ctrl+a, mouse, vi copy-mode, sesh picker, resurrect/continuum
-├── cursor/
-│   └── extensions.txt              # extension list (installed by install/apps.sh)
+├── .chezmoiroot                    # points chezmoi at home/
+├── home/                           # chezmoi source: dot_zshrc → ~/.zshrc, etc.
+│   ├── .chezmoi.toml.tmpl          # per-machine data (git email)
+│   ├── .chezmoiexternal.toml       # zsh + tmux plugins (git clones, refreshed weekly)
+│   ├── .chezmoiscripts/            # macos defaults, mise install, extensions, completions
+│   ├── .chezmoitemplates/
+│   │   └── cursor-extensions.txt   # editor extension list
+│   ├── create_private_dot_secrets  # ~/.secrets template (created once, never overwritten)
+│   ├── dot_zshrc, dot_zprofile     # shell config
+│   ├── dot_gitconfig.tmpl, dot_gitignore_global
+│   ├── dot_tmux.conf, dot_tmux.conf.local   # Oh my tmux! + local overrides
+│   ├── dot_ripgreprc
+│   ├── dot_docker/modify_config.json        # adds docker-compose plugin path, keeps the rest
+│   └── dot_config/
+│       ├── kitty/kitty.conf        # Idle Toes theme, Nerd Font, vim-kitty-navigator
+│       ├── starship.toml           # prompt modules
+│       └── mise/config.toml        # global tool versions
 ├── python/
 │   ├── pyproject.toml.template     # project template (ruff, mypy, pytest, bandit…)
 │   └── .pre-commit-config.yaml.template
-├── install/
-│   ├── macos.sh                    # macOS system defaults
-│   ├── dev.sh                      # uv pythons/tools, tenv versions, completions
-│   └── apps.sh                     # Cursor + VS Code extension installer
 └── docs/
     └── REFERENCE.md                # full shortcut cheat sheet + tool docs
 ```
 
-## Dotfiles are symlinked
+## Editing dotfiles
 
-`bootstrap.sh` symlinks config files into place rather than copying them, so edits in the repo take effect immediately:
+chezmoi **copies** files into place (the repo is the source of truth), so after editing run `chezmoi apply`:
 
-```
-~/.zshrc                   → dev_setup/zsh/.zshrc
-~/.zprofile                → dev_setup/zsh/.zprofile
-~/.gitconfig               → dev_setup/git/.gitconfig
-~/.gitignore_global        → dev_setup/git/.gitignore_global
-~/.config/kitty/kitty.conf → dev_setup/kitty/kitty.conf
-~/.config/starship.toml    → dev_setup/starship/starship.toml
-~/.tmux.conf               → dev_setup/tmux/.tmux.conf
-~/.tmux.conf.local         → dev_setup/tmux/.tmux.conf.local
+```bash
+chezmoi edit ~/.zshrc        # edit the source file in the repo
+chezmoi diff                 # preview what apply would change
+chezmoi apply                # write changes (and re-run any changed setup scripts)
+chezmoi add ~/.config/foo    # start managing a new file
+chezmoi cd                   # jump into the repo's home/ dir
 ```
 
-`bootstrap.sh` also clones [TPM](https://github.com/tmux-plugins/tpm) and the tmux-resurrect/tmux-continuum plugins into `~/.tmux/plugins/` (git clones, not symlinks — same spot tmux itself expects them).
+Git email defaults to the personal address; on a work Mac set `DOTFILES_GIT_EMAIL` before the first bootstrap (or edit `~/.config/chezmoi/chezmoi.toml`).
+
+## Tool versions (mise)
+
+Edit `home/dot_config/mise/config.toml`, then `chezmoi apply` (runs `mise install`). Per project, put a `mise.toml` or `.terraform-version` in the repo root and the version switches on `cd`.
 
 ## API keys
 
-Copy `.secrets.example` to `~/.secrets` and fill in your values. It is sourced by `.zshrc` and ignored by git globally.
+`~/.secrets` is created from the template on first run (mode 600, never overwritten afterwards). Fill in your values; it is sourced by `.zshrc` and ignored by git globally.
 
 ```bash
-cp ~/github/dev_setup/.secrets.example ~/.secrets
-chmod 600 ~/.secrets
 cursor ~/.secrets
 ```
 
@@ -104,5 +111,5 @@ See [`docs/REFERENCE.md`](docs/REFERENCE.md) for the full cheat sheet covering:
 - Kitty shortcuts (splits, tabs, font size, scrollback)
 - zsh vi mode (INSERT / NORMAL / VISUAL)
 - All shell aliases and functions
-- fzf, zoxide, uv, tenv, git config highlights
+- fzf, zoxide, uv, mise, chezmoi, git config highlights
 - Neovim getting started

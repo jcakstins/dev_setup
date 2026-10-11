@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Keeps ~/.docker/config.json intact but makes `docker compose` find Homebrew's
+# docker-compose plugin. chezmoi feeds the current file on stdin.
+set -euo pipefail
+dir="/opt/homebrew/lib/docker/cli-plugins"
+input="$(cat)"
+[[ -n "${input// /}" ]] || input='{}'
+jq --arg d "$dir" '.cliPluginsExtraDirs = (((.cliPluginsExtraDirs // []) + [$d]) | unique)' <<<"$input"

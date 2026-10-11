@@ -8,10 +8,11 @@
 # Must be first — sets HOMEBREW_PREFIX and adjusts PATH/MANPATH/INFOPATH
 eval "$(/opt/homebrew/bin/brew shellenv)"
 
-# ── Python ────────────────────────────────────────────────────────────────────
-# Interpreters are managed by uv: `uv python install --default 3.13` puts
-# python/python3 into ~/.local/bin, alongside uv tools (e.g. `uv tool install ruff`)
-export PATH="${HOME}/.local/bin:${HOME}/bin:$PATH"
+# ── Tool versions (mise) ──────────────────────────────────────────────────────
+# Shims make mise-managed tools (terraform, tofu, ...) available to
+# non-interactive processes too (editors, scripts). Interactive shells get the
+# full `mise activate` in .zshrc. uv tools / user scripts live in ~/.local/bin.
+export PATH="${HOME}/.local/share/mise/shims:${HOME}/.local/bin:${HOME}/bin:$PATH"
 
 # ── PATH deduplication ────────────────────────────────────────────────────────
 # Zsh-native deduplication — removes duplicate entries from PATH silently

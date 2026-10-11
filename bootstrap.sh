@@ -6,6 +6,12 @@
 #    bash bootstrap.sh            # full setup (safe to re-run any time)
 #    bash bootstrap.sh --dry-run  # preview what would be done
 #
+#  Layers:
+#    1. Homebrew + Brewfile   — apps and CLI tools         (this script)
+#    2. chezmoi (home/)       — dotfiles, plugins, secrets file, macOS defaults,
+#                               editor extensions, completions
+#    3. mise                  — python, terraform, opentofu… (run by chezmoi)
+#
 #  Every step runs independently: a failure is recorded and reported in the
 #  summary at the end instead of aborting the rest of the setup. Re-running
 #  only does what's still missing.
@@ -139,19 +145,31 @@ brew_version="$("$BREW" --version 2>/dev/null || echo 'not installed (dry-run)')
 info "Homebrew: ${brew_version%%$'\n'*}"
 
 # ── 1. Homebrew packages ──────────────────────────────────────────────────────
-# Formulae that were replaced in the Brewfile and conflict with their successor
+# Packages that were replaced in the Brewfile; removed first because they
+# conflict with (or shadow) their successors.
 REPLACED_FORMULAE=(
-  tfenv     # → tenv
-  opentofu  # → tenv (provides `tofu`)
+  tfenv     # → mise
+  opentofu  # → mise
+  tenv      # → mise
+)
+REPLACED_CASKS=(
+  terraform-linters/tap/tflint   # → mise
 )
 
 brew_packages() {
   run brew update --quiet || warn "brew update failed — continuing with current formulae"
 
+  local f
   for f in "${REPLACED_FORMULAE[@]}"; do
     if brew list --formula "$f" &>/dev/null; then
       info "Removing ${f} (replaced in Brewfile)..."
-      run brew uninstall --formula "$f"
+      run brew uninstall --formula "$f" || warn "Could not remove ${f}"
+    fi
+  done
+  for f in "${REPLACED_CASKS[@]}"; do
+    if brew list --cask "${f##*/}" &>/dev/null; then
+      info "Removing ${f} (replaced in Brewfile)..."
+      run brew uninstall --cask "${f##*/}" || warn "Could not remove ${f}"
     fi
   done
 
@@ -180,99 +198,69 @@ brew_packages() {
 }
 step "Homebrew packages (Brewfile)" brew_packages
 
-# ── 2. Symlink dotfiles ───────────────────────────────────────────────────────
-symlink() {
-  local src="$1" dst="$2"
-  run mkdir -p "$(dirname "$dst")"
-  if [[ -L "$dst" && "$(readlink "$dst")" == "$src" ]]; then
-    info "$(basename "$dst") already linked"
-    return 0
-  fi
-  if [[ -e "$dst" || -L "$dst" ]]; then
-    local backup="${dst}.bak.$(date +%Y%m%d-%H%M%S)"
-    warn "Backing up existing $(basename "$dst") → ${backup}"
-    run mv "$dst" "$backup"
-  fi
-  run ln -s "$src" "$dst"
-  info "$(basename "$dst") → $src"
+# ── 2. Dotfiles + setup scripts (chezmoi) ─────────────────────────────────────
+# Existing files that differ from the repo are copied to a timestamped backup
+# directory before chezmoi overwrites them, so nothing is lost on a used Mac.
+backup_conflicts() {
+  local backup_dir="${HOME}/.dotfiles-backup/$(date +%Y%m%d-%H%M%S)" n=0 line path
+  while IFS= read -r line; do
+    # status columns: [last-written vs actual][actual vs target]; 'M' in the
+    # second column = an existing file that apply would change
+    [[ "${line:1:1}" == "M" ]] || continue
+    path="${line:3}"
+    [[ -e "${HOME}/${path}" || -L "${HOME}/${path}" ]] || continue
+    mkdir -p "${backup_dir}/$(dirname "$path")"
+    cp -PR "${HOME}/${path}" "${backup_dir}/${path}"
+    n=$((n + 1))
+  done < <(chezmoi --source "$DOTFILES_DIR" status --exclude=scripts,externals 2>/dev/null || true)
+  (( n > 0 )) && warn "Backed up ${n} existing file(s) to ${backup_dir}" || true
 }
 
 dotfiles() {
-  symlink "${DOTFILES_DIR}/zsh/.zshrc"            "${HOME}/.zshrc"
-  symlink "${DOTFILES_DIR}/zsh/.zprofile"          "${HOME}/.zprofile"
-  symlink "${DOTFILES_DIR}/git/.gitconfig"         "${HOME}/.gitconfig"
-  symlink "${DOTFILES_DIR}/git/.gitignore_global"  "${HOME}/.gitignore_global"
-  symlink "${DOTFILES_DIR}/kitty/kitty.conf"       "${HOME}/.config/kitty/kitty.conf"
-  symlink "${DOTFILES_DIR}/starship/starship.toml" "${HOME}/.config/starship.toml"
-  symlink "${DOTFILES_DIR}/tmux/.tmux.conf"        "${HOME}/.tmux.conf"
-  symlink "${DOTFILES_DIR}/tmux/.tmux.conf.local"  "${HOME}/.tmux.conf.local"
-}
-step "Symlink dotfiles" dotfiles
+  command -v chezmoi &>/dev/null || { warn "chezmoi not installed — is it in the Brewfile?"; return 1; }
 
-# ── 3. Shell + tmux plugins ───────────────────────────────────────────────────
-# clone_or_update <url> <dir> [extra clone args...]
-# A failed update of an existing checkout only warns — the old copy still works.
-clone_or_update() {
-  local url="$1" dir="$2"; shift 2
-  local name; name="$(basename "$dir")"
-  if [[ -d "${dir}/.git" ]]; then
-    info "${name} present — pulling latest..."
-    run git -C "$dir" pull --ff-only --quiet \
-      || warn "Could not update ${name} — keeping existing copy"
-  else
-    [[ -e "$dir" ]] && run rm -rf "$dir"   # leftover from an interrupted clone
-    info "Cloning ${name}..."
-    retry 3 run git clone --depth 1 --quiet "$@" "$url" "$dir"
+  # Generates ~/.config/chezmoi/chezmoi.toml (git email etc.) once
+  if [[ ! -f "${HOME}/.config/chezmoi/chezmoi.toml" ]] && ! $DRY_RUN; then
+    chezmoi init --source "$DOTFILES_DIR"
   fi
+
+  if $DRY_RUN; then
+    chezmoi --source "$DOTFILES_DIR" apply --dry-run --verbose || true
+    return 0
+  fi
+
+  backup_conflicts
+  # GitHub token (if gh is logged in) avoids API rate limits for mise downloads
+  if [[ -z "${MISE_GITHUB_TOKEN:-}" ]] && gh auth token &>/dev/null; then
+    export MISE_GITHUB_TOKEN="$(gh auth token)"
+  fi
+  chezmoi --source "$DOTFILES_DIR" apply --verbose
 }
+step "Dotfiles, plugins, tools (chezmoi + mise)" dotfiles
 
-plugins() {
-  local zsh_dir="${HOME}/.zsh/plugins" tmux_dir="${HOME}/.tmux/plugins"
-  run mkdir -p "$zsh_dir" "$tmux_dir"
-
-  clone_or_update https://github.com/zsh-users/zsh-autosuggestions "${zsh_dir}/zsh-autosuggestions"
-  clone_or_update https://github.com/jeffreytse/zsh-vi-mode        "${zsh_dir}/zsh-vi-mode"
-
-  # Clone tmux plugins directly rather than via tpm's install_plugins.sh: that
-  # script discovers @plugin lines by querying a *running* tmux server, which
-  # this bootstrap doesn't start. tmux picks up already-cloned plugins on launch.
-  clone_or_update https://github.com/tmux-plugins/tpm "${tmux_dir}/tpm"
-  for plugin in tmux-resurrect tmux-continuum; do
-    clone_or_update "https://github.com/tmux-plugins/${plugin}" "${tmux_dir}/${plugin}" \
-      --single-branch --recursive
+# ── 3. Verify ─────────────────────────────────────────────────────────────────
+verify() {
+  export PATH="${HOME}/.local/share/mise/shims:${HOME}/.local/bin:${PATH}"
+  local missing=() tool version
+  for tool in git gh jq rg fd bat fzf zoxide starship tmux tmuxp sesh chezmoi mise uv \
+              python terraform tofu tflint ruff http terraform-docs tilt kubectl \
+              colima docker trufflehog pre-commit op claude; do
+    if command -v "$tool" &>/dev/null; then
+      case "$tool" in
+        tmux)    version="$(tmux -V 2>&1 || true)" ;;
+        kubectl) version="$(kubectl version --client 2>&1 || true)" ;;
+        *)       version="$("$tool" --version 2>&1 || true)" ;;
+      esac
+      version="${version%%$'\n'*}"
+      info "${tool}: ${version}"
+    else
+      warn "${tool}: NOT FOUND"
+      missing+=("$tool")
+    fi
   done
+  (( ${#missing[@]} == 0 ))
 }
-step "Shell + tmux plugins" plugins
-
-# ── 4. fzf shell integration ──────────────────────────────────────────────────
-fzf_integration() {
-  local fzf_install="${HOMEBREW_PREFIX:-/opt/homebrew}/opt/fzf/install"
-  if [[ -f "$fzf_install" ]]; then
-    run "$fzf_install" --key-bindings --completion --no-update-rc --no-bash --no-fish
-  else
-    warn "fzf install script not found at ${fzf_install} — is fzf installed?"
-    return 1
-  fi
-}
-step "fzf shell integration" fzf_integration
-
-# ── 5. Secrets file ───────────────────────────────────────────────────────────
-secrets() {
-  if [[ ! -f "${HOME}/.secrets" ]]; then
-    info "Creating ~/.secrets from template..."
-    run cp "${DOTFILES_DIR}/.secrets.example" "${HOME}/.secrets"
-    run chmod 600 "${HOME}/.secrets"
-    warn "Edit ~/.secrets to add your API keys and tokens."
-  else
-    info "~/.secrets already exists — not overwriting."
-  fi
-}
-step "Secrets file" secrets
-
-# ── 6–8. Sub-scripts ──────────────────────────────────────────────────────────
-step "macOS defaults"    run bash "${DOTFILES_DIR}/install/macos.sh"
-step "Dev tooling"       run bash "${DOTFILES_DIR}/install/dev.sh"
-step "Editor extensions" run bash "${DOTFILES_DIR}/install/apps.sh"
+$DRY_RUN || step "Verify tools" verify
 
 # ── Summary ───────────────────────────────────────────────────────────────────
 echo ""
@@ -287,6 +275,7 @@ info "  1. Open a new terminal (or: exec zsh) to load the new shell config"
 info "  2. Sign in once: gh auth login · op signin · claude"
 info "  3. Start Docker when needed: colima start (or at login: brew services start colima)"
 info "  4. Add API keys to ~/.secrets"
+info "  Edit dotfiles: chezmoi edit ~/.zshrc  ·  preview: chezmoi diff  ·  apply: chezmoi apply"
 echo ""
 
 if (( ${#FAILED[@]} > 0 )); then
