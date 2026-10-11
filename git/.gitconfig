@@ -4,14 +4,14 @@
 
 [user]
     name  = jcakstins
-    email = janis.cakstins@arbor-education.com
+    email = janis.cakstins@gmail.com
 
 [init]
     defaultBranch = main
 
 [core]
     editor       = cursor --wait
-    excludesfile = ~/.gitignore_global
+	excludesfile = /Users/janiscakstins/.gitignore_global
     autocrlf     = input            # normalise line endings on commit
     whitespace   = trailing-space,space-before-tab
 
@@ -86,8 +86,8 @@
 [credential]
     helper = osxkeychain            # macOS Keychain for HTTPS credentials
 
-[url "git@github.com:"]
-    insteadOf = https://github.com/ # use SSH for all github.com clones
+# No SSH rewrite for github.com: HTTPS + the gh credential helper (below) works
+# on a fresh machine before any SSH key exists, which bootstrap.sh relies on.
 
 [filter "lfs"]
     required = true

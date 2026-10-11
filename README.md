@@ -9,7 +9,7 @@ git clone https://github.com/jcakstins/dev_setup.git ~/github/dev_setup
 bash ~/github/dev_setup/bootstrap.sh
 ```
 
-Then install OrbStack manually: https://orbstack.dev
+Then start Docker when needed: `colima start`
 
 ## What gets installed
 
@@ -26,18 +26,17 @@ Then install OrbStack manually: https://orbstack.dev
 - [vim-kitty-navigator](https://github.com/knubie/vim-kitty-navigator) — seamless `Ctrl+hjkl` navigation between kitty panes and nvim splits
 
 **Python**
-- Python 3.13 + 3.14 via Homebrew
-- [uv](https://docs.astral.sh/uv/) — fast package/project manager
+- [uv](https://docs.astral.sh/uv/) — package/project manager; also installs Python 3.13 (default `python`) + 3.14
 - [pre-commit](https://pre-commit.com/) — git hook framework
 - Templates for `pyproject.toml` and `.pre-commit-config.yaml` in `python/`
 
 **Infrastructure**
-- [tfenv](https://github.com/tfutils/tfenv) — terraform version manager (installs latest + 1.5.7)
-- terraform-docs, tflint, [tilt](https://tilt.dev/), [opentofu](https://opentofu.org/), [trufflehog](https://github.com/trufflesecurity/trufflehog)
-- kubectl, [OrbStack](https://orbstack.dev/) (Docker + Linux VMs)
+- [tenv](https://github.com/tofuutils/tenv) — Terraform/OpenTofu version manager (installs latest terraform + 1.5.7, latest tofu)
+- terraform-docs, tflint, [tilt](https://tilt.dev/), [trufflehog](https://github.com/trufflesecurity/trufflehog)
+- kubectl, [Colima](https://github.com/abiosoft/colima) + Docker CLI + Docker Compose
 
 **Apps**
-- 1Password + 1Password CLI, Postman, DBeaver, Kitty, Cursor
+- 1Password + 1Password CLI, Kitty, Cursor, [Claude Code](https://claude.com/claude-code)
 
 ## Repository structure
 
@@ -48,9 +47,9 @@ dev_setup/
 ├── .secrets.example                # template for API keys → copy to ~/.secrets
 ├── zsh/
 │   ├── .zshrc                      # interactive shell config
-│   └── .zprofile                   # login shell (Homebrew, Python path, OrbStack)
+│   └── .zprofile                   # login shell (Homebrew, ~/.local/bin PATH)
 ├── git/
-│   ├── .gitconfig                  # aliases, rebase pull, SSH rewrite, cursor diff
+│   ├── .gitconfig                  # aliases, rebase pull, gh auth, cursor diff 
 │   └── .gitignore_global           # global ignore (Python, Node, Terraform, secrets)
 ├── kitty/
 │   └── kitty.conf                  # Idle Toes theme, Nerd Font, vim-kitty-navigator
@@ -66,7 +65,7 @@ dev_setup/
 │   └── .pre-commit-config.yaml.template
 ├── install/
 │   ├── macos.sh                    # macOS system defaults
-│   ├── dev.sh                      # tfenv versions, uv tools, shell completions
+│   ├── dev.sh                      # uv pythons/tools, tenv versions, completions
 │   └── apps.sh                     # Cursor + VS Code extension installer
 └── docs/
     └── REFERENCE.md                # full shortcut cheat sheet + tool docs
@@ -105,5 +104,5 @@ See [`docs/REFERENCE.md`](docs/REFERENCE.md) for the full cheat sheet covering:
 - Kitty shortcuts (splits, tabs, font size, scrollback)
 - zsh vi mode (INSERT / NORMAL / VISUAL)
 - All shell aliases and functions
-- fzf, zoxide, uv, tfenv, git config highlights
+- fzf, zoxide, uv, tenv, git config highlights
 - Neovim getting started

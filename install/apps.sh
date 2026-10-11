@@ -50,7 +50,3 @@ install_extensions() {
 install_extensions "cursor" "Cursor"
 install_extensions "code" "VS Code"
 
-echo ""
-info "Remember: OrbStack must be downloaded and opened manually."
-info "  Download: https://orbstack.dev"
-info "  Shell integration (~/.orbstack/shell/init.zsh) is auto-created on first launch."

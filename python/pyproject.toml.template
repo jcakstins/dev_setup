@@ -9,7 +9,7 @@
 [project]
 name = "PROJECT_NAME"
 version = "0.1.0"
-authors = [{ name = "jcakstins", email = "janis.cakstins@arbor-education.com" }]
+authors = [{ name = "jcakstins", email = "janis.cakstins@gmail.com" }]
 requires-python = ">=3.13"
 dependencies = []
 

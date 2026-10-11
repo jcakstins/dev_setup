@@ -9,19 +9,10 @@
 eval "$(/opt/homebrew/bin/brew shellenv)"
 
 # ── Python ────────────────────────────────────────────────────────────────────
-# Expose unversioned python/pip/pydoc symlinks from Homebrew Python 3.13
-# This means `python` and `pip` point to 3.13 without needing pyenv or aliases.
-export PATH="$(brew --prefix)/opt/python@3.13/libexec/bin:$PATH"
-
-# uv installs tools into ~/.local/bin (e.g. `uv tool install ruff`)
+# Interpreters are managed by uv: `uv python install --default 3.13` puts
+# python/python3 into ~/.local/bin, alongside uv tools (e.g. `uv tool install ruff`)
 export PATH="${HOME}/.local/bin:${HOME}/bin:$PATH"
 
 # ── PATH deduplication ────────────────────────────────────────────────────────
 # Zsh-native deduplication — removes duplicate entries from PATH silently
 typeset -U PATH
-
-# ── OrbStack ──────────────────────────────────────────────────────────────────
-# OrbStack shell integration: adds docker, kubectl, and Linux VM tools to PATH.
-# This file is created automatically when you first open OrbStack.app.
-# Silently ignored if OrbStack is not yet installed.
-source "${HOME}/.orbstack/shell/init.zsh" 2>/dev/null || true

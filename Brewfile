@@ -1,6 +1,8 @@
 # Brewfile — managed by dev_setup dotfiles
 # Run: brew bundle --file=Brewfile
-# Generated for macOS 15 Sequoia, Apple Silicon
+# macOS 15 Sequoia, Apple Silicon
+
+tap "terraform-linters/tap"   # tflint (no longer in homebrew-core)
 
 # ── Core utilities ────────────────────────────────────────────────────────────
 brew "bat"            # better cat with syntax highlighting
@@ -15,51 +17,33 @@ brew "zoxide"         # smarter cd
 # ── Shell ─────────────────────────────────────────────────────────────────────
 brew "starship"       # cross-shell prompt
 
-# ── Terminal multiplexing ──────────────────────────────────────────────────────
-brew "tmux"           # terminal multiplexer — session persistence on top of kitty
-brew "tmuxp"          # tmux session/window layouts from a YAML/JSON file
+# ── Terminal multiplexing ─────────────────────────────────────────────────────
+brew "tmux"           # terminal multiplexer
+brew "tmuxp"          # tmux session layouts from YAML/JSON
 brew "sesh"           # fast tmux session switcher (fzf + zoxide aware)
 
-# ── Python ────────────────────────────────────────────────────────────────────
-brew "python@3.13"    # primary Python (unversioned symlinks via .zprofile)
-brew "python@3.14"    # secondary Python
-brew "uv"             # fast Python package/project manager
-brew "pre-commit"     # git hook framework
-
-# ── Node ──────────────────────────────────────────────────────────────────────
-brew "node"           # Node.js (current)
+# ── Python (interpreters managed by uv) ───────────────────────────────────────
+brew "uv"             # Python package/project/version manager
 
 # ── Infrastructure / DevOps ───────────────────────────────────────────────────
-# NOTE: terraform is managed by tfenv — do NOT install terraform directly via brew
-brew "tfenv"          # terraform version manager (use: tfenv install <version>)
-brew "terraform-docs" # generate terraform docs
-brew "tflint"         # terraform linter
+# Terraform/OpenTofu versions managed by tenv (e.g. `tenv tofu install`)
+brew "tenv"           # version manager for OpenTofu / Terraform
+brew "terraform-docs" # generate docs from Terraform modules
+cask "terraform-linters/tap/tflint"  # Terraform linter (official tap)
 brew "tilt"           # local dev orchestration for Kubernetes
-brew "docker-compose" # Docker Compose v2 (standalone binary, required by tilt)
-brew "opentofu"       # open-source Terraform fork
-brew "trufflehog"     # secrets scanner
 brew "kubectl"        # Kubernetes CLI
+brew "colima"         # container runtime (Docker daemon)
+brew "docker"         # Docker CLI
+brew "docker-compose" # Docker Compose v2
 
 # ── Security & code quality ───────────────────────────────────────────────────
-# (pre-commit listed above under Python)
+brew "trufflehog"     # secrets scanner
+brew "pre-commit"     # git hook framework
 
 # ── Casks ─────────────────────────────────────────────────────────────────────
 cask "font-jetbrains-mono-nerd-font"  # monospace font with Nerd Font icons
 cask "kitty"                          # GPU-accelerated terminal emulator
-cask "cursor"                         # AI code editor (Cursor)
-cask "dbeaver-community"              # universal database client
-cask "postman"                        # API development & testing
+cask "cursor"                         # AI code editor
 cask "1password"                      # password manager
-cask "1password-cli"                  # 1Password CLI (op) for terminal access
-
-# ── Docker runtime (pick ONE) ─────────────────────────────────────────────────
-# macOS has no built-in Docker daemon — one of the options below is required.
-#
-# Option A: OrbStack — best experience, but requires a paid license for commercial use.
-#           Disable this if you don't have a license and use Colima instead.
-cask "orbstack"
-#
-# Option B: Colima — free/open-source, no license concerns, works anywhere.
-#           Enable this (and uncomment docker CLI below) if you don't have an OrbStack license.
-# brew "colima"
-# brew "docker"          # Docker CLI (daemon provided by Colima)
+cask "1password-cli"                  # 1Password CLI (op)
+cask "claude-code"                    # Claude Code CLI (claude)

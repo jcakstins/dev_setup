@@ -9,42 +9,34 @@ log()  { printf '\033[0;32m==>\033[0m %s\n' "$*"; }
 info() { printf '\033[0;34m   →\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33m[warn]\033[0m %s\n' "$*"; }
 
-# ── tfenv: install terraform versions ────────────────────────────────────────
-log "tfenv — Terraform version management"
+# uv-managed pythons and uv tools live here; make them visible to this script
+export PATH="${HOME}/.local/bin:${PATH}"
 
-if ! command -v tfenv &>/dev/null; then
-  warn "tfenv not found — skipping terraform install (run after Brewfile install)"
-else
-  info "tfenv version: $(tfenv --version 2>&1 | head -1)"
+# ── uv: Python interpreters ───────────────────────────────────────────────────
+log "uv — Python interpreters"
 
-  # Install latest stable terraform
-  if ! tfenv list 2>/dev/null | grep -q "latest"; then
-    info "Installing latest terraform..."
-    tfenv install latest
-  fi
-  tfenv use latest
-  info "Active terraform: $(terraform version | head -1)"
-
-  # Also keep 1.5.7 available (last version before BSL licence change)
-  if ! tfenv list 2>/dev/null | grep -q "1.5.7"; then
-    info "Installing terraform 1.5.7 (pre-BSL)..."
-    tfenv install 1.5.7
-  else
-    info "terraform 1.5.7 already installed"
-  fi
-
-  info "Available terraform versions:"
-  tfenv list 2>/dev/null | while read -r v; do info "  $v"; done
-fi
-
-# ── uv: install global tools ──────────────────────────────────────────────────
-log "uv global tools"
+PYTHON_DEFAULT="3.13"         # becomes `python` / `python3` in ~/.local/bin
+PYTHON_EXTRA=(3.14)           # also available as `python3.14`
 
 if ! command -v uv &>/dev/null; then
-  warn "uv not found — skipping global tool install"
+  warn "uv not found — skipping Python install (run after Brewfile install)"
 else
   info "uv version: $(uv --version)"
 
+  info "Installing Python ${PYTHON_DEFAULT} (default)..."
+  uv python install --default --preview-features python-install-default "$PYTHON_DEFAULT" \
+    || warn "Failed to install Python ${PYTHON_DEFAULT}"
+
+  for v in "${PYTHON_EXTRA[@]}"; do
+    info "Installing Python ${v}..."
+    uv python install "$v" || warn "Failed to install Python ${v}"
+  done
+fi
+
+# ── uv: global tools ──────────────────────────────────────────────────────────
+log "uv global tools"
+
+if command -v uv &>/dev/null; then
   # Global tools installed via 'uv tool' — isolated from project environments
   UV_TOOLS=(
     ruff      # fast Python linter + formatter (useful globally for quick scripts)
@@ -53,7 +45,7 @@ else
   )
 
   for tool in "${UV_TOOLS[@]}"; do
-    if uv tool list 2>/dev/null | grep -q "^${tool} "; then
+    if grep -q "^${tool} " <<<"$(uv tool list 2>/dev/null)"; then
       info "${tool} already installed"
     else
       info "Installing ${tool} via uv tool..."
@@ -62,44 +54,74 @@ else
   done
 fi
 
+# ── tenv: Terraform + OpenTofu versions ───────────────────────────────────────
+log "tenv — Terraform / OpenTofu version management"
+
+if ! command -v tenv &>/dev/null; then
+  warn "tenv not found — skipping terraform/tofu install (run after Brewfile install)"
+else
+  info "tenv version: $(tenv --version 2>&1)"
+
+  # `install` is a no-op if the version is already present
+  info "Installing latest Terraform..."
+  tenv tf install latest
+  tenv tf use latest
+
+  # Also keep 1.5.7 available (last version before the BSL licence change)
+  info "Installing Terraform 1.5.7 (pre-BSL)..."
+  tenv tf install 1.5.7
+
+  info "Installing latest OpenTofu..."
+  tenv tofu install latest
+  tenv tofu use latest
+
+  info "Terraform versions: $(tenv tf list 2>/dev/null | tr -s '[:space:]' ' ')"
+  info "OpenTofu versions:  $(tenv tofu list 2>/dev/null | tr -s '[:space:]' ' ')"
+fi
+
+# ── Docker (Colima runtime) ───────────────────────────────────────────────────
+log "Docker CLI plugins"
+
+# Let the docker CLI find Homebrew's docker-compose as `docker compose`
+DOCKER_CONFIG_FILE="${HOME}/.docker/config.json"
+PLUGINS_DIR="${HOMEBREW_PREFIX:-/opt/homebrew}/lib/docker/cli-plugins"
+mkdir -p "$(dirname "$DOCKER_CONFIG_FILE")"
+[[ -s "$DOCKER_CONFIG_FILE" ]] || echo '{}' > "$DOCKER_CONFIG_FILE"
+
+if jq -e --arg d "$PLUGINS_DIR" '(.cliPluginsExtraDirs // []) | index($d)' "$DOCKER_CONFIG_FILE" &>/dev/null; then
+  info "cliPluginsExtraDirs already includes ${PLUGINS_DIR}"
+else
+  info "Adding ${PLUGINS_DIR} to cliPluginsExtraDirs..."
+  tmp="$(mktemp)"
+  jq --arg d "$PLUGINS_DIR" '.cliPluginsExtraDirs = ((.cliPluginsExtraDirs // []) + [$d])' \
+    "$DOCKER_CONFIG_FILE" > "$tmp" && mv "$tmp" "$DOCKER_CONFIG_FILE"
+fi
+
 # ── Shell completions ─────────────────────────────────────────────────────────
 log "Shell completions"
 
 COMPLETIONS_DIR="${HOME}/.zsh/completions"
 mkdir -p "$COMPLETIONS_DIR"
 
-# kubectl completions
-if command -v kubectl &>/dev/null; then
-  if [[ ! -f "${COMPLETIONS_DIR}/_kubectl" ]]; then
-    info "Generating kubectl completions..."
-    kubectl completion zsh > "${COMPLETIONS_DIR}/_kubectl"
+# name → command that prints a zsh completion script
+gen_completion() {
+  local name="$1"; shift
+  if ! command -v "$name" &>/dev/null; then
+    warn "${name} not found — skipping completions"
+  elif [[ -f "${COMPLETIONS_DIR}/_${name}" ]]; then
+    info "${name} completions already present"
   else
-    info "kubectl completions already present"
+    info "Generating ${name} completions..."
+    "$@" > "${COMPLETIONS_DIR}/_${name}" || warn "Failed to generate ${name} completions"
   fi
-else
-  warn "kubectl not found — skipping completions"
-fi
+}
 
-# terraform completions (only if terraform is managed by tfenv and available)
-if command -v terraform &>/dev/null; then
-  if [[ ! -f "${COMPLETIONS_DIR}/_terraform" ]]; then
-    info "Generating terraform completions..."
-    # terraform -install-autocomplete writes to .zshrc; we do it manually instead
-    terraform -install-autocomplete 2>/dev/null || true
-  else
-    info "terraform completions already present"
-  fi
-fi
-
-# gh (GitHub CLI) completions
-if command -v gh &>/dev/null; then
-  if [[ ! -f "${COMPLETIONS_DIR}/_gh" ]]; then
-    info "Generating gh completions..."
-    gh completion -s zsh > "${COMPLETIONS_DIR}/_gh"
-  else
-    info "gh completions already present"
-  fi
-fi
+gen_completion kubectl kubectl completion zsh
+gen_completion gh      gh completion -s zsh
+gen_completion docker  docker completion zsh
+gen_completion colima  colima completion zsh
+gen_completion uv      uv generate-shell-completion zsh
+# terraform completions are wired up in .zshrc via bashcompinit
 
 # ── ripgrep config ────────────────────────────────────────────────────────────
 log "ripgrep config"
@@ -127,22 +149,27 @@ else
   info "${RIPGREP_RC} already exists"
 fi
 
-# ── pre-commit ────────────────────────────────────────────────────────────────
-log "pre-commit"
-
-if command -v pre-commit &>/dev/null; then
-  info "pre-commit version: $(pre-commit --version)"
-else
-  warn "pre-commit not found"
-fi
-
 # ── Tool verification ─────────────────────────────────────────────────────────
 log "Tool verification"
 
-TOOLS=(python3 python pip uv terraform opentofu tfenv kubectl gh git node rg fd bat fzf zoxide starship pre-commit trufflehog)
+TOOLS=(
+  git gh jq rg fd bat fzf zoxide starship
+  tmux tmuxp sesh
+  uv python python3 ruff
+  tenv terraform tofu terraform-docs tflint tilt kubectl
+  colima docker docker-compose
+  trufflehog pre-commit op claude
+)
 for tool in "${TOOLS[@]}"; do
   if command -v "$tool" &>/dev/null; then
-    version=$("$tool" --version 2>&1 | head -1)
+    # Capture whole output then keep line 1 — piping to `head` can SIGPIPE under pipefail
+    case "$tool" in
+      kubectl) version=$(kubectl version --client 2>&1 || true) ;;
+      tmux)    version=$(tmux -V 2>&1 || true) ;;
+      tilt)    version=$(tilt version 2>&1 || true) ;;
+      *)       version=$("$tool" --version 2>&1 || true) ;;
+    esac
+    version="${version%%$'\n'*}"
     info "${tool}: ${version}"
   else
     warn "${tool}: NOT FOUND"

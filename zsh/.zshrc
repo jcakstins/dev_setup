@@ -86,7 +86,7 @@ alias venv='uv venv'
 alias pipi='uv pip install'
 alias pipu='uv pip install --upgrade'
 
-# Terraform / tfenv
+# Terraform (versions via tenv)
 alias tf='terraform'
 alias tfi='terraform init'
 alias tfp='terraform plan'
@@ -95,11 +95,10 @@ alias tfd='terraform destroy'
 alias tff='terraform fmt -recursive'
 alias tfv='terraform validate'
 
-# OpenTofu (mirrors terraform aliases)
-alias tofu='opentofu'
-alias otfi='opentofu init'
-alias otfp='opentofu plan'
-alias otfa='opentofu apply'
+# OpenTofu (mirrors terraform aliases; binary is `tofu`, via tenv)
+alias otfi='tofu init'
+alias otfp='tofu plan'
+alias otfa='tofu apply'
 
 # Kubernetes
 alias k='kubectl'

@@ -7,7 +7,7 @@ Personal developer environment cheat sheet. Keep this open on a second monitor w
 - [Neovim](https://neovim.io/doc/) · [Vim cheat sheet](https://vim.rtorr.com/)
 - [Starship](https://starship.rs/config/) · [zsh-vi-mode](https://github.com/jeffreytse/zsh-vi-mode)
 - [fzf](https://github.com/junegunn/fzf) · [zoxide](https://github.com/ajeetdsouza/zoxide) · [uv](https://docs.astral.sh/uv/)
-- [tfenv](https://github.com/tfutils/tfenv) · [pre-commit](https://pre-commit.com/)
+- [tenv](https://github.com/tofuutils/tenv) · [pre-commit](https://pre-commit.com/)
 - [tmux](https://github.com/tmux/tmux/wiki) · [Oh my tmux!](https://github.com/gpakosz/.tmux) · [sesh](https://github.com/joshmedeski/sesh) · [tmuxp](https://tmuxp.git-pull.com/)
 
 ---
@@ -344,20 +344,21 @@ pre-commit install
 
 ---
 
-## Terraform — tfenv
+## Terraform / OpenTofu — tenv
 
-`tfenv` manages multiple terraform versions. Use a `.terraform-version` file per project.
+`tenv` manages Terraform and OpenTofu versions. Use a `.terraform-version` / `.opentofu-version` file per project.
 
 | Command | Action |
 |---------|--------|
-| `tfenv list` | Show installed versions |
-| `tfenv list-remote` | Show available versions |
-| `tfenv install 1.9.0` | Install specific version |
-| `tfenv install latest` | Install latest stable |
-| `tfenv use 1.9.0` | Switch active version |
+| `tenv tf list` | Show installed Terraform versions |
+| `tenv tf list-remote` | Show available versions |
+| `tenv tf install 1.9.0` | Install specific version |
+| `tenv tf install latest` | Install latest stable |
+| `tenv tf use 1.9.0` | Switch active version |
+| `tenv tofu install latest` / `tenv tofu use latest` | Same for OpenTofu (`tofu`) |
 | `echo "1.9.0" > .terraform-version` | Pin version for this project |
 
-> **Tip:** Drop a `.terraform-version` file in each project root. tfenv picks it up automatically.
+> **Tip:** Drop a `.terraform-version` (or `.opentofu-version`) file in each project root. tenv picks it up automatically.
 
 ---
 
@@ -372,7 +373,7 @@ Your `.gitconfig` has these non-obvious settings active:
 | `fetch.prune = true` | Remote-deleted branches disappear locally after fetch |
 | `diff.algorithm = histogram` | Better diffs for code (fewer spurious hunks) |
 | `merge.conflictstyle = zdiff3` | Conflict markers show the common ancestor (easier to resolve) |
-| SSH rewrite | All `https://github.com/` URLs automatically use SSH |
+| gh credential helper | HTTPS auth to GitHub via `gh auth login` (no SSH key needed) |
 
 ---
 
